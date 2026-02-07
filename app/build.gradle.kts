@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.phoenix.gui"
-    compileSdk = 34  // 修正：实际可用版本是 34
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.phoenix.gui"
         minSdk = 24
-        targetSdk = 34  // 修正：与 compileSdk 保持一致
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -25,16 +25,16 @@ android {
             )
         }
     }
-
+    
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17  // 推荐升级到 17
+        sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
+    
     kotlinOptions {
-        jvmTarget = "17"  // 与 Java 版本保持一致
+        jvmTarget = "17"
     }
-
+    
     buildFeatures {
         viewBinding = true
     }
