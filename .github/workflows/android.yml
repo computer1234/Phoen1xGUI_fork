@@ -1,16 +1,23 @@
-name: Android CI
-
+name: PhoenixGUI Android Build
 on:
   push:
-    branches: [ "master" ]
+    branches: [ master ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # 从项目配置中提取的版本
+      COMPILE_SDK: 34
+      MIN_SDK: 24
+      BUILD_TOOLS: 34.0.0 # 与compileSdk 34匹配的最新Build Tools
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -19,25 +26,31 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 明确指定Android SDK组件（包含Build Tools，解决AAPT2缺失）
+      # 配置项目所需的Android SDK组件
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          # 替换为项目build.gradle.kts中对应的compileSdkVersion
-          sdk-version: "34"
-          # 必须包含Build Tools（AAPT2在其中）
-          components: "build-tools;34.0.0,platforms;android-34"
+          sdk-version: ${{ env.COMPILE_SDK }}
+          components: |
+            build-tools;${{ env.BUILD_TOOLS }}
+            platforms;android-${{ env.COMPILE_SDK }}
+            platforms;android-${{ env.MIN_SDK }} # 适配minSdk=24
           cache: true
 
       - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+        run: chmod +x ./gradlew
 
-      # 增加--stacktrace方便调试，同时确保构建Debug包
-      - name: Lint & Build Debug APK
-        run: ./gradlew lintDebug assembleDebug --no-daemon --stacktrace
+      # 预下载依赖，避免构建时网络问题
+      - name: Pre-download dependencies
+        run: ./gradlew dependencies --no-daemon
 
+      # 执行项目的Lint检查+Debug包编译（匹配项目viewBinding等配置）
+      - name: Build & Lint
+        run: ./gradlew lintDebug assembleDebug --no-daemon
+
+      # 上传项目的Debug APK产物
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: phoenixgui-debug
           path: app/build/outputs/apk/debug/app-debug.apk
