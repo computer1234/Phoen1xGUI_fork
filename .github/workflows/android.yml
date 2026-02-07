@@ -1,48 +1,35 @@
-name: Android Build (自动下载依赖)
+name: Android Build
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      GRADLE_OPTS: "-Xmx3072m -XX:MaxMetaspaceSize=768m" # 加大内存保障依赖下载+资源编译
-
     steps:
-      - name: 拉取代码
-        uses: actions/checkout@v4
-
-      - name: 配置 Android SDK（匹配项目版本）
-        uses: android-actions/setup-android@v3
-        with:
-          android-sdk-build-tools: "34.0.0"
-          android-sdk-platforms: "android-34"
-          android-sdk-commandlinetools: "11076708"
-
-      - name: 配置 JDK 17
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle # 缓存Gradle依赖，加速后续下载
-
-      - name: 授予 gradlew 权限
-        run: chmod +x ./gradlew
-
-      - name: 预下载所有依赖（提前缓存，避免构建时下载超时）
-        run: ./gradlew dependencies --quiet # 执行依赖解析，自动下载所有需要的库/插件
-
-      - name: 构建 Release APK
-        run: ./gradlew assembleRelease -x lint --info
-
-      - name: 上传 APK 产物
+          
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          
+      - name: Grant execute permission
+        run: chmod +x gradlew
+        
+      - name: Build
+        run: ./gradlew assembleRelease --no-daemon
+        
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: phoen1xgui-release-apk
+          name: app-release
           path: app/build/outputs/apk/release/*.apk
-          retention-days: 30
