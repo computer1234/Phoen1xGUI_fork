@@ -8,19 +8,33 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
+      - uses: actions/checkout@v4
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Build with Gradle
-      run: ./gradlew build
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # 新增：配置Android SDK（项目编译需要）
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cache: true
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 替换原build：增加lint检查+明确编译Debug包
+      - name: Lint & Build Debug APK
+        run: ./gradlew lintDebug assembleDebug --no-daemon
+
+      # 新增：上传Debug APK产物（方便下载测试）
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
