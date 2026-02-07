@@ -19,20 +19,23 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 新增：配置Android SDK（项目编译需要）
+      # 明确指定Android SDK组件（包含Build Tools，解决AAPT2缺失）
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
+          # 替换为项目build.gradle.kts中对应的compileSdkVersion
+          sdk-version: "34"
+          # 必须包含Build Tools（AAPT2在其中）
+          components: "build-tools;34.0.0,platforms;android-34"
           cache: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 替换原build：增加lint检查+明确编译Debug包
+      # 增加--stacktrace方便调试，同时确保构建Debug包
       - name: Lint & Build Debug APK
-        run: ./gradlew lintDebug assembleDebug --no-daemon
+        run: ./gradlew lintDebug assembleDebug --no-daemon --stacktrace
 
-      # 新增：上传Debug APK产物（方便下载测试）
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
